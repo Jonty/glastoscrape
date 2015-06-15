@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 import unicodecsv
 
 artists = []
@@ -21,7 +21,6 @@ Artists.map(function(artist) {
     li.innerHTML = artist[0] + '<input type="hidden" value="' + artist[1] + '" name="artists[]"><img src="http://cdn.last.fm/depth/buttons/bin_simple.gif" alt="Remove this artist" title="Remove this artist">';
     listNode.appendChild(li)
 })
-$('uploadSubmit').click()
 ''' % ','.join(artists)
 
 with open('lfm_js_console_paste.js', 'w') as f:
