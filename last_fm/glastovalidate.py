@@ -4,6 +4,7 @@ import requests
 import re
 import time
 import json
+import urllib
 
 artists = set()
 filtered = [['title', 'url', 'stage', 'day', 'time', 'lfm_id']]
@@ -47,7 +48,7 @@ with open('glastonbury_2015_schedule.csv', 'r') as fp:
             continue
         artists.add(artist)
 
-        response = requests.get('http://www.last.fm/ajax/verifyResourceByName?type=6&name=' + artist)
+        response = requests.get('http://www.last.fm/ajax/verifyResourceByName?type=6&name=' + urllib.quote(artist.encode('utf8')))
         data = json.loads(response.content)
 
         if data.get('resource', False):
