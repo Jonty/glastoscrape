@@ -30,7 +30,7 @@ def check_exists(candidate, row):
         return False
 
 
-with open('glastonbury_2015_schedule.csv', 'r') as fp:
+with open('../glastonbury_2015_schedule.csv', 'r') as fp:
     f = unicodecsv.reader(fp, delimiter=',', encoding='utf-8')
 
     for row in f:
