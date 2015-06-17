@@ -6,6 +6,7 @@ import re
 import time
 import json
 import urllib
+import codecs
 
 artists = set()
 filtered = [['title', 'url', 'stage', 'day', 'time', 'lfm_id']]
@@ -30,6 +31,9 @@ def check_exists(candidate, row):
         return False
 
 
+with codecs.open('valid_stages.txt', 'r', 'utf-8') as fp:
+    valid_stages = fp.read().splitlines()
+
 with open('../glastonbury_2015_schedule.csv', 'r') as fp:
     f = unicodecsv.reader(fp, delimiter=',', encoding='utf-8')
 
@@ -39,8 +43,8 @@ with open('../glastonbury_2015_schedule.csv', 'r') as fp:
         if artist == 'title':
             continue
 
-        if 'CIRCUS' in stage or 'KIDZ' in stage or 'MOVIE' in stage or 'CINEMA' in stage or 'MAKE AND DO' in stage:
-            continue
+        if stage not in valid_stages:
+            print "Skipping '%s' as stage '%s' is not whitelisted" % (artist, stage)
 
         if artist == 'TBA' or artist == 'TO BE ANNOUNCED' or 'TBC' in artist:
             continue
@@ -52,6 +56,9 @@ with open('../glastonbury_2015_schedule.csv', 'r') as fp:
             continue
 
         if 'OPEN MIC' in artist:
+            continue
+
+        if artist == 'TBA':
             continue
 
         if '(DJ)' in artist or 'DJ SET' in artist:
