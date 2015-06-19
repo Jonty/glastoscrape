@@ -14,10 +14,10 @@ for node in artist_nodes:
     link = None
     children = title.getchildren()
     if children:
-        link = children[0].attrib['href']
+        link = children[0].attrib['href'].strip()
         title = children[0]
 
-    data.append([title.text, link, stage.text, day.text, time.text])
+    data.append([title.text.strip(), link, stage.text.strip(), day.text.strip(), time.text.strip()])
 
 with open('glastonbury_2015_schedule.csv', 'w') as fp:
     out = unicodecsv.writer(fp, delimiter=',', encoding='utf-8')
