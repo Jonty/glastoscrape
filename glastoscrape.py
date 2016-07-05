@@ -2,7 +2,7 @@
 import lxml.html
 import unicodecsv
 
-site = 'http://www.glastonburyfestivals.co.uk/line-up/line-up-2015/?artist'
+site = 'http://www.glastonburyfestivals.co.uk/line-up/line-up-2016/?artist'
 root = lxml.html.parse(site).getroot()
 
 artist_nodes = root.xpath('//*[@id=\"main\"]/div[2]/div/ul/li')
@@ -17,8 +17,9 @@ for node in artist_nodes:
         link = children[0].attrib['href'].strip()
         title = children[0]
 
-    data.append([title.text.strip(), link, stage.text.strip(), day.text.strip(), time.text.strip()])
+    if title.text:
+        data.append([title.text.strip(), link, stage.text.strip(), day.text.strip(), time.text.strip()])
 
-with open('glastonbury_2015_schedule.csv', 'w') as fp:
+with open('glastonbury_2016_schedule.csv', 'w') as fp:
     out = unicodecsv.writer(fp, delimiter=',', encoding='utf-8')
     out.writerows(data)
