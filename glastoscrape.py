@@ -3,7 +3,7 @@ from lxml import html
 import unicodecsv
 import requests
 
-response = requests.get('https://www.glastonburyfestivals.co.uk/line-up/line-up-2019/?artist')
+response = requests.get('https://www.glastonburyfestivals.co.uk/line-up/line-up-2022/?artist')
 root = html.document_fromstring(response.content)
 
 artist_nodes = root.xpath('//*[@id=\"main\"]/div[2]/div/ul/li')
@@ -31,6 +31,6 @@ for node in artist_nodes:
             time = None
         data.append([title, link, stage, day, time])
 
-with open('glastonbury_2019_schedule.csv', 'w') as fp:
+with open('glastonbury_2022_schedule.csv', 'w') as fp:
     out = unicodecsv.writer(fp, delimiter=',', encoding='utf-8')
     out.writerows(data)
