@@ -49,7 +49,7 @@ def check_exists(candidate, row):
 with codecs.open('valid_stages.txt', 'r', 'utf-8') as fp:
     valid_stages = fp.read().splitlines()
 
-with open('../glastonbury_2019_schedule.csv', 'r') as fp:
+with open('../glastonbury_2022_schedule.csv', 'r') as fp:
     f = unicodecsv.reader(fp, delimiter=',', encoding='utf-8')
 
     for row in f:
@@ -125,7 +125,7 @@ with open('../glastonbury_2019_schedule.csv', 'r') as fp:
         time.sleep(0.2)
 
 
-with open('glastonbury_2019_schedule_filtered.csv', 'w') as fp:
+with open('glastonbury_2022_schedule_filtered.csv', 'w') as fp:
     out = unicodecsv.writer(fp, delimiter=',', encoding='utf-8')
     out.writerows(filtered)
 
