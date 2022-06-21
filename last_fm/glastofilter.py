@@ -11,7 +11,7 @@ with codecs.open('valid_stages.txt', 'r', 'utf-8') as fp:
 
 filtered = []
 
-with open('../glastonbury_2017_schedule.csv', 'r') as fp:
+with open('../glastonbury_2022_schedule.csv', 'r') as fp:
     f = unicodecsv.reader(fp, delimiter=',', encoding='utf-8')
 
     for row in f:
@@ -23,7 +23,7 @@ with open('../glastonbury_2017_schedule.csv', 'r') as fp:
 
         filtered.append(row)
 
-with open('glastonbury_2017_schedule_onlymusic.csv', 'w') as fp:
+with open('glastonbury_2022_schedule_onlymusic.csv', 'w') as fp:
     out = unicodecsv.writer(fp, delimiter=',', encoding='utf-8')
     out.writerows(filtered)
 
