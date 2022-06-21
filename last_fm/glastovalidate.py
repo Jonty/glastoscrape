@@ -7,34 +7,49 @@ import time
 import json
 import urllib
 import codecs
+import os
+
+API_KEY = os.environ["LASTFM_API_KEY"]
 
 artists = set()
-filtered = [['title', 'url', 'stage', 'day', 'time', 'lfm_id']]
+filtered = [['title', 'url', 'stage', 'day', 'time', 'mbid', 'lfm_url', 'orig_name']]
 
 def check_exists(candidate, row):
-    response = requests.get(
-        'http://www.last.fm/ajax/verifyResourceByName?type=6&name=' + 
-        urllib.quote(candidate.encode('utf8'))
-    )
-    data = json.loads(response.content)
-
-    if data.get('resource', False):
-        lfm_id = data['resource']['id']
-        lfm_name = data['resource']['name']
-        lfm_row = row + [lfm_id]
-        lfm_row[0] = lfm_name
-        filtered.append(lfm_row)
-        print 'YES: ' + lfm_name
-        return True
-    else:
-        print 'NO: ' + candidate
+    if not candidate.strip():
         return False
+
+    while True:
+        response = requests.get(
+            'http://ws.audioscrobbler.com/2.0/?method=artist.search&artist=%s&api_key=%s&format=json' % (urllib.quote(candidate.encode('utf8')), API_KEY)
+        )
+        data = json.loads(response.content)
+
+        try:
+            matches = data['results']['artistmatches']['artist']
+            if matches:
+                for match in matches:
+                    if match['name'].lower().strip() == candidate.lower().strip():
+                        mbid = match['mbid']
+                        lfm_name = match['name']
+                        lfm_url = match['url']
+                        lfm_row = row + [mbid] + [lfm_url] + [candidate]
+                        lfm_row[0] = lfm_name
+                        filtered.append(lfm_row)
+                        print 'YES: ' + lfm_name
+                        return True
+
+            print 'NO: ' + candidate
+            return False
+        except KeyError, e:
+            print 'ERROR querying %s (%s), RETRYING. [%s]' % (candidate, e, response.content)
+            time.sleep(30)
+            continue
 
 
 with codecs.open('valid_stages.txt', 'r', 'utf-8') as fp:
     valid_stages = fp.read().splitlines()
 
-with open('../glastonbury_2015_schedule.csv', 'r') as fp:
+with open('../glastonbury_2017_schedule.csv', 'r') as fp:
     f = unicodecsv.reader(fp, delimiter=',', encoding='utf-8')
 
     for row in f:
@@ -45,6 +60,7 @@ with open('../glastonbury_2015_schedule.csv', 'r') as fp:
 
         if stage not in valid_stages:
             print "Skipping '%s' as stage '%s' is not whitelisted" % (artist, stage)
+            continue
 
         if artist == 'TBA' or artist == 'TO BE ANNOUNCED' or 'TBC' in artist:
             continue
@@ -82,7 +98,7 @@ with open('../glastonbury_2015_schedule.csv', 'r') as fp:
             for candidate in candidates:
                 for splitter in (
                         ' VS ', ' B2B ', ' PRESENTS ', ' FT ', 
-                        ' FT. ', 'FEAT', ' AND ', ' & ', ' + ', ','):
+                        ' FT. ', 'FEAT', ' AND ', ' & ', ' + ', ',', ' BAND', ' X '):
 
                     if splitter in candidate:
                         performers = candidate.split(splitter)
@@ -109,7 +125,7 @@ with open('../glastonbury_2015_schedule.csv', 'r') as fp:
         time.sleep(0.2)
 
 
-with open('glastonbury_2015_schedule_filtered.csv', 'w') as fp:
+with open('glastonbury_2017_schedule_filtered.csv', 'w') as fp:
     out = unicodecsv.writer(fp, delimiter=',', encoding='utf-8')
     out.writerows(filtered)
 
