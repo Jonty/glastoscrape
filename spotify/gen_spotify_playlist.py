@@ -19,17 +19,36 @@ spotify_username = "jontywareing"
 token = util.prompt_for_user_token("jontywareing", ["playlist-modify-public", "playlist-read-private", "playlist-modify-private"], redirect_uri='http://localhost:9011') 
 spotify = spotipy.Spotify(auth=token)
 
-playlist = spotify.user_playlist_create("jontywareing", name=playlist_title)
+playlist = None
+playlists = spotify.user_playlists(spotify_username)
+for p in playlists["items"]:
+    if p["name"] == playlist_title:
+        playlist = p
+
+if not playlist:
+    playlist = spotify.user_playlist_create(spotify_username, name=playlist_title)
+
 
 def check_artist(name, row):
-    results = spotify.search(q='artist:' + name, type='artist')
+    results = spotify.search(q='artist:' + name[:50], type='artist')
     if results["artists"]["items"]:
         found = results["artists"]["items"][0]
+        print("Found artist '%s' for '%s'" % (found["name"].lower(), name.lower()))
         if name.lower() == found["name"].lower():
-            tracks = spotify.artist_top_tracks(found["uri"])
-            for track in tracks["tracks"][:1]: # Top ....one. Two is too many.
-                print("Adding '%s' by '%s': %s" % (track["name"], found["name"], track["uri"]))
+            tracks = spotify.artist_top_tracks(found["uri"])["tracks"]
+            if not tracks:
+                print(" - Didn't find any tracks for artist, retrying via track search")
+                tracks = spotify.search(q=name, type='track')["tracks"]["items"][:1]
+
+            for track in tracks:
+                if track["artists"][0]["name"] != found["name"]:
+                    print(" * SKIPPING '%s' by '%s', artist not first listed" % (track["name"], track["artists"][0]["name"]))
+                    continue
+
+                print(" = Adding '%s' by '%s': %s" % (track["name"], track["artists"][0]["name"], track["uri"]))
                 spotify.user_playlist_add_tracks(spotify_username, playlist["id"], [track["id"]])
+                break
+
             return True
     return False
 
