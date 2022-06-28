@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 from lxml import html
-import unicodecsv
+import csv
 import requests
 
 response = requests.get('https://www.glastonburyfestivals.co.uk/line-up/line-up-2022/?artist')
@@ -32,5 +32,5 @@ for node in artist_nodes:
         data.append([title, link, stage, day, time])
 
 with open('glastonbury_2022_schedule.csv', 'w') as fp:
-    out = unicodecsv.writer(fp, delimiter=',', encoding='utf-8')
+    out = csv.writer(fp, delimiter=',')
     out.writerows(data)
