@@ -47,8 +47,12 @@ def check_exists(candidate, row):
             continue
 
 
+valid_stages = []
 with codecs.open('valid_stages.txt', 'r', 'utf-8') as fp:
-    valid_stages = fp.read().splitlines()
+    for stage in fp.read().splitlines():
+        if stage.startswith("#"):
+            continue
+        valid_stages.append(stage)
 
 with open('../glastonbury_%s_schedule.csv' % YEAR, 'rb') as fp:
     f = unicodecsv.reader(fp, delimiter=',', encoding='utf-8')
