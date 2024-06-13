@@ -5,11 +5,12 @@ import requests
 import re
 import time
 import json
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import codecs
 import os
 
 API_KEY = os.environ["LASTFM_API_KEY"]
+YEAR = os.environ["YEAR"]
 
 artists = set()
 filtered = [['title', 'url', 'stage', 'day', 'time', 'mbid', 'lfm_url', 'orig_name']]
@@ -20,7 +21,7 @@ def check_exists(candidate, row):
 
     while True:
         response = requests.get(
-            'http://ws.audioscrobbler.com/2.0/?method=artist.search&artist=%s&api_key=%s&format=json' % (urllib.quote(candidate.encode('utf8')), API_KEY)
+            'http://ws.audioscrobbler.com/2.0/?method=artist.search&artist=%s&api_key=%s&format=json' % (urllib.parse.quote(candidate), API_KEY)
         )
         data = json.loads(response.content)
 
@@ -35,13 +36,13 @@ def check_exists(candidate, row):
                         lfm_row = row + [mbid] + [lfm_url] + [candidate]
                         lfm_row[0] = lfm_name
                         filtered.append(lfm_row)
-                        print 'YES: ' + lfm_name
+                        print('YES: ' + lfm_name)
                         return True
 
-            print 'NO: ' + candidate
+            print('NO: ' + candidate)
             return False
-        except KeyError, e:
-            print 'ERROR querying %s (%s), RETRYING. [%s]' % (candidate, e, response.content)
+        except KeyError as e:
+            print('ERROR querying %s (%s), RETRYING. [%s]' % (candidate, e, response.content))
             time.sleep(30)
             continue
 
@@ -49,17 +50,17 @@ def check_exists(candidate, row):
 with codecs.open('valid_stages.txt', 'r', 'utf-8') as fp:
     valid_stages = fp.read().splitlines()
 
-with open('../glastonbury_2022_schedule.csv', 'r') as fp:
+with open('../glastonbury_%s_schedule.csv' % YEAR, 'rb') as fp:
     f = unicodecsv.reader(fp, delimiter=',', encoding='utf-8')
 
     for row in f:
-        artist, url, stage, _, _ = row
+        artist, url, stage, _, _, _ = row
 
         if artist == 'title':
             continue
 
         if stage not in valid_stages:
-            print "Skipping '%s' as stage '%s' is not whitelisted" % (artist, stage)
+            print("Skipping '%s' as stage '%s' is not whitelisted" % (artist, stage))
             continue
 
         if artist == 'TBA' or artist == 'TO BE ANNOUNCED' or 'TBC' in artist:
@@ -125,7 +126,7 @@ with open('../glastonbury_2022_schedule.csv', 'r') as fp:
         time.sleep(0.2)
 
 
-with open('glastonbury_2022_schedule_filtered.csv', 'w') as fp:
+with open('glastonbury_%s_schedule_filtered.csv' % YEAR, 'wb') as fp:
     out = unicodecsv.writer(fp, delimiter=',', encoding='utf-8')
     out.writerows(filtered)
 
