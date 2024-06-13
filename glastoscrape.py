@@ -2,8 +2,9 @@
 from lxml import html
 import csv
 import requests
+import os
 
-year = 2023
+year = os.environ['YEAR']
 
 response = requests.get('https://www.glastonburyfestivals.co.uk/line-up/line-up-%s/?artist' % year)
 root = html.document_fromstring(response.content)
