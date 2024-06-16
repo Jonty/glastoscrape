@@ -8,6 +8,7 @@ import json
 import urllib.request, urllib.parse, urllib.error
 import codecs
 import os
+import string
 from collections import defaultdict
 
 API_KEY = os.environ["LASTFM_API_KEY"]
@@ -40,7 +41,7 @@ def get_info(artist):
             continue
 
     json.dump(data, open(f, 'w'))
-    return json
+    return data
 
 def get_similar(artist):
     f = 'similar_data/' + get_valid_filename(artist) + '.json'
@@ -71,6 +72,7 @@ def get_user_top_artists(user):
     return [item["name"] for item in data["topartists"]["artist"]]
 
 recommended = defaultdict(list)
+instances = defaultdict(set)
 
 with open('glastonbury_%s_schedule_filtered.csv' % YEAR, 'rb') as fp:
     top_artists = get_user_top_artists(LFM_USER)
@@ -82,14 +84,19 @@ with open('glastonbury_%s_schedule_filtered.csv' % YEAR, 'rb') as fp:
         if title == "title":
             continue
 
-        for item in get_similar(title)["similarartists"]["artist"]:
+        similar_data = get_similar(title)["similarartists"]
+        resolved_artist = similar_data["@attr"]["artist"]
+
+        for item in similar_data["artist"]:
             similar_artist = item["name"]
 
             if similar_artist in top_artists:
-                recommended[title].append(similar_artist)
+                recommended[resolved_artist].append(similar_artist)
+                instances[resolved_artist].add(tuple(row))
 
 print("""
 <head>
+    <meta charset="UTF-8">
     <title>Glastonbury %s recommendations for %s</title>
     <style type=\"text/css\">
         body {
@@ -124,7 +131,23 @@ print("<br>")
 for k in sorted(recommended, key=lambda key: len(recommended[key]), reverse=True):
     info = get_info(k)
     print("<h2>%s</h2>" % info["artist"]["name"])
-    print("<h4 style=\"margin-left: 20px\"><i>%s</i></h4>" % ", ".join(t["name"] for t in info["artist"]["tags"]["tag"]))
-    print("<p style=\"margin-left: 20px\"><small>%s</small></p>" % info["artist"]["bio"]["summary"])
-    print("<p><small><strong>Similar artists you've listened to:</strong> %s</small></p>" % ", ".join(recommended[k][:20]))
+    print("<h4 style=\"margin-left: 20px\"><i>%s</i></h4>" % ", ".join(t["name"] for t in info["artist"]["tags"]["tag"] if t["name"] != "seen live"))
+    if info["artist"]["bio"]["summary"][0] != " ":
+        print("<p style=\"margin-left: 20px\"><i><small>%s</small></i></p>" % info["artist"]["bio"]["summary"])
+
+    print("<ul>")
+
+    days = defaultdict(list)
+    for instance in instances[k]:
+        days[instance[3]].append(instance)
+
+    for day in ["THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"]:
+        for instance in sorted(days[day], key=lambda x: x[4]):
+            print("<li>%s, %s from %s</li>" % (instance[3].capitalize(), string.capwords(instance[2]), instance[4]))
+            if instance[5]:
+                print("<p style=\"margin-top: 5px; margin-bottom: 5px;\"><i><small>\"%s\"</i></small></p>" % instance[5])
+
+    print("</ul>")
+
+    print("<p style=\"margin-left: 20px\"><small><strong>Similar artists you've listened to:</strong> %s</small></p>" % ", ".join(recommended[k][:20]))
     print("<hr>")

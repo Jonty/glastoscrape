@@ -12,21 +12,26 @@ import os
 API_KEY = os.environ["LASTFM_API_KEY"]
 YEAR = os.environ["YEAR"]
 
-artists = set()
-filtered = [['title', 'url', 'stage', 'day', 'time', 'mbid', 'lfm_url', 'orig_name']]
+filtered = [['title', 'url', 'stage', 'day', 'time', 'description', 'mbid', 'lfm_url', 'orig_name']]
+
+cache = {}
 
 def check_exists(candidate, row):
     if not candidate.strip():
         return False
 
     while True:
-        response = requests.get(
-            'http://ws.audioscrobbler.com/2.0/?method=artist.search&artist=%s&api_key=%s&format=json' % (urllib.parse.quote(candidate), API_KEY)
-        )
-        data = json.loads(response.content)
+        data = cache.get(candidate, None)
+        if not data:
+            response = requests.get(
+                'http://ws.audioscrobbler.com/2.0/?method=artist.search&artist=%s&api_key=%s&format=json' % (urllib.parse.quote(candidate), API_KEY)
+            )
+            data = json.loads(response.content)
 
         try:
             matches = data['results']['artistmatches']['artist']
+            cache[candidate] = data
+
             if matches:
                 for match in matches:
                     if match['name'].lower().strip() == candidate.lower().strip():
@@ -90,6 +95,9 @@ with open('../glastonbury_%s_schedule.csv' % YEAR, 'rb') as fp:
         artist = re.sub('\s- LIVE$', '', artist)
         artist = re.sub('\s+', ' ', artist)
         artist = re.sub('[\r\n]', '', artist)
+        
+        # Handles [DIALLED IN TAKEOVER] etc
+        artist = re.sub('\[.*?\]', '', artist)
 
         # Takes care of "Session presents: "
         artist = re.sub('^.*?: ', '', artist)
@@ -113,18 +121,14 @@ with open('../glastonbury_%s_schedule.csv' % YEAR, 'rb') as fp:
                             performer = re.sub('\s- LIVE$', '', performer)
                             performer = performer.strip()
                             if performer not in candidates:
+                                # Skip "and friends" etc
+                                if performer.lower() in ["friends", "guests"]:
+                                    continue
                                 candidates += [performer]
                                 worked = True
         
-        if artist in artists:
-            continue
-        artists.add(artist)
-
         if not check_exists(artist, row):
             for candidate in candidates:
-                if candidate in artists:
-                    continue
-                artists.add(candidate)
                 check_exists(candidate, row)
 
         time.sleep(0.2)
