@@ -12,25 +12,44 @@ import os
 API_KEY = os.environ["LASTFM_API_KEY"]
 YEAR = os.environ["YEAR"]
 
-filtered = [['title', 'url', 'stage', 'day', 'time', 'description', 'mbid', 'lfm_url', 'orig_name']]
+filtered = [['title', 'url', 'stage', 'day', 'time', 'description', 'mbid', 'lfm_url', 'candidate_name', 'orig_name']]
 
-cache = {}
+def get_valid_filename(name):
+    s = str(name).strip().replace(" ", "_")
+    s = re.sub(r"(?u)[^-\w.]", "", s)
+    if s in {"", ".", ".."}:
+        raise Exception("Could not derive file name from '%s'" % name)
+    return s
 
 def check_exists(candidate, row):
     if not candidate.strip():
         return False
 
     while True:
-        data = cache.get(candidate, None)
+        data = None
+
+        try:
+            f = 'search_cache/' + get_valid_filename(candidate) + '.json'
+        except Exception as e:
+            print("Skipping %s due to weird name: %s" % (candidate, e))
+            return False
+
+        if os.path.exists(f):
+            data = json.load(open(f, 'r'))
+
         if not data:
             response = requests.get(
                 'http://ws.audioscrobbler.com/2.0/?method=artist.search&artist=%s&api_key=%s&format=json' % (urllib.parse.quote(candidate), API_KEY)
             )
             data = json.loads(response.content)
 
+            if response.status_code == 200:
+                json.dump(data, open(f, 'w'))
+
+            time.sleep(0.2)
+
         try:
             matches = data['results']['artistmatches']['artist']
-            cache[candidate] = data
 
             if matches:
                 for match in matches:
@@ -38,7 +57,7 @@ def check_exists(candidate, row):
                         mbid = match['mbid']
                         lfm_name = match['name']
                         lfm_url = match['url']
-                        lfm_row = row + [mbid] + [lfm_url] + [candidate]
+                        lfm_row = row + [mbid] + [lfm_url] + [candidate] + [row[0]]
                         lfm_row[0] = lfm_name
                         filtered.append(lfm_row)
                         print('YES: ' + lfm_name)
@@ -87,9 +106,6 @@ with open('../glastonbury_%s_schedule.csv' % YEAR, 'rb') as fp:
         if artist == 'TBA':
             continue
 
-        if '(DJ)' in artist or 'DJ SET' in artist:
-            continue
-
         artist = re.sub('\s\(.*?\)?$', '', artist)
         artist = re.sub('\s-$', '', artist)
         artist = re.sub('\s- LIVE$', '', artist)
@@ -97,11 +113,16 @@ with open('../glastonbury_%s_schedule.csv' % YEAR, 'rb') as fp:
         artist = re.sub('[\r\n]', '', artist)
         
         # Handles [DIALLED IN TAKEOVER] etc
-        artist = re.sub('\[.*?\]', '', artist)
+        if not artist.startswith("[") and artist.endswith("]"):
+            artist = re.sub('\[.*?\]', '', artist)
 
         # Takes care of "Session presents: "
         artist = re.sub('^.*?: ', '', artist)
         artist = artist.strip()
+
+        bad_artists = ["arcadia", "pixels", "love"]
+        if artist.lower() in bad_artists:
+            continue
 
         candidates = [artist]
         worked = True
@@ -110,7 +131,7 @@ with open('../glastonbury_%s_schedule.csv' % YEAR, 'rb') as fp:
 
             for candidate in candidates:
                 for splitter in (
-                        ' VS ', ' B2B ', ' PRESENTS ', ' FT ', 
+                        ' VS ', ' B2B ', ' PRESENTS ', ' PRESENTS: ', ' PRES ', ' FT ', ' WITH ',
                         ' FT. ', 'FEAT', ' AND ', ' & ', ' + ', ',', ' BAND', ' X ', ' -'):
 
                     if splitter in candidate:
@@ -122,7 +143,7 @@ with open('../glastonbury_%s_schedule.csv' % YEAR, 'rb') as fp:
                             performer = performer.strip()
                             if performer not in candidates:
                                 # Skip "and friends" etc
-                                if performer.lower() in ["friends", "guests"]:
+                                if performer.lower() in ["friends", "guests"] + bad_artists:
                                     continue
                                 candidates += [performer]
                                 worked = True
@@ -130,8 +151,6 @@ with open('../glastonbury_%s_schedule.csv' % YEAR, 'rb') as fp:
         if not check_exists(artist, row):
             for candidate in candidates:
                 check_exists(candidate, row)
-
-        time.sleep(0.2)
 
 
 with open('glastonbury_%s_schedule_filtered.csv' % YEAR, 'wb') as fp:
