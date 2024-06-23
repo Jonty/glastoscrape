@@ -132,7 +132,7 @@ with open('../glastonbury_%s_schedule.csv' % YEAR, 'rb') as fp:
             for candidate in candidates:
                 for splitter in (
                         ' VS ', ' B2B ', ' PRESENTS ', ' PRESENTS: ', ' PRES ', ' FT ', ' WITH ',
-                        ' FT. ', 'FEAT', ' AND ', ' & ', ' + ', ',', ' BAND', ' X ', ' -'):
+                        ' FT. ', 'FEAT', ' AND ', ' & ', ' + ', ',', ' BAND', ' X ', ' -', ' PERFORMED BY ', ' TAKEOVER:', ' W/ '):
 
                     if splitter in candidate:
                         performers = candidate.split(splitter)
