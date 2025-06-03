@@ -4,41 +4,45 @@ import csv
 import requests
 import os
 
-year = os.environ['YEAR']
+year = os.environ["YEAR"]
 
-response = requests.get('https://www.glastonburyfestivals.co.uk/line-up/line-up-%s/?artist' % year)
+response = requests.get(
+    f"https://www.glastonburyfestivals.co.uk/line-up/line-up-{year}/?view=stages"
+)
 root = html.document_fromstring(response.content)
 
-artist_nodes = root.xpath('//*[@id=\"main\"]/div[2]/div/ul/li')
+stage_names = root.xpath('//*[@class="stage-name"]/button/text()')
+stage_sections = root.xpath('//div[contains(@class, "stage-container")]')
+stage_data = zip(stage_names, stage_sections)
 
-data = [['title', 'url', 'stage', 'day', 'time', 'description']]
+data = []
 
-for node in artist_nodes:
-    title, stage, day, time = node.getchildren()
-    link = None
-    description = None
+for stage_name, stage_node in stage_data:
+    days = stage_node.xpath('./h4[@class="stage-day"]/text()')
+    event_tables = stage_node.xpath("./table")
+    event_data = zip(days, event_tables)
 
-    if 'title' in title.attrib:
-        description = title.attrib['title'].strip()
+    for day, table_node in event_data:
+        event_rows = table_node.xpath(".//tr")
+        for row in event_rows:
+            title = row[0].text_content().strip()
+            time = row[1].text_content().strip()
+            description = ""
+            link = ""
 
-    children = title.getchildren()
-    if children:
-        link = children[0].attrib['href'].strip()
-        title = children[0]
+            link_node = row[0].xpath("./a")
+            if link_node:
+                link = link_node[0].attrib["href"].strip()
 
-    if title.text:
-        title = title.text.strip()
-        stage = stage.text.strip()
-        if day.text:
-            day = day.text.strip()
-        else:
-            day = None
-        if time.text:
-            time = time.text.strip()
-        else:
-            time = None
-        data.append([title, link, stage, day, time, description])
+                if "title" in link_node[0].attrib:
+                    description = link_node[0].attrib["title"].strip()
 
-with open('glastonbury_%s_schedule.csv' % year, 'w') as fp:
-    out = csv.writer(fp, delimiter=',')
+            data.append([title, link, stage_name, day, time, description])
+
+# Sort by name, day, time
+data = sorted(data, key=lambda x: (x[0], x[3], x[4]))
+
+with open("glastonbury_%s_schedule.csv" % year, "w") as fp:
+    out = csv.writer(fp, delimiter=",")
+    out.writerow(["title", "url", "stage", "day", "time", "description"])
     out.writerows(data)
