@@ -1,0 +1,34 @@
+name: Update Glastonbury listings
+concurrency: scrape
+on: 
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+jobs:
+  update-and-commit:
+    runs-on: ubuntu-latest
+    environment: scrape
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          persist-credentials: false
+      - name: Update and commit
+        env:
+          YEAR: 2025
+        run: |
+          pip install -r requirements.txt
+
+          python -u glastoscrape.py
+          git add glastonbury_${YEAR}_schedule.csv
+
+          git config --global user.email "bot@jonty.co.uk"
+          git config --global user.name "Glastonbury update bot"
+
+          # || true means this won't error when there's nothing to commit
+          git commit -m "Automatic Glastonbury listings update" || true
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.ref }}
