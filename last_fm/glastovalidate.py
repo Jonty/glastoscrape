@@ -109,6 +109,7 @@ with open('../glastonbury_%s_schedule.csv' % YEAR, 'rb') as fp:
         artist = re.sub('\s\(.*?\)?$', '', artist)
         artist = re.sub('\s-$', '', artist)
         artist = re.sub('\s- LIVE$', '', artist)
+        artist = re.sub(' DJ SET$', '', artist)
         artist = re.sub('\s+', ' ', artist)
         artist = re.sub('[\r\n]', '', artist)
         
@@ -132,7 +133,7 @@ with open('../glastonbury_%s_schedule.csv' % YEAR, 'rb') as fp:
             for candidate in candidates:
                 for splitter in (
                         ' VS ', ' B2B ', ' PRESENTS ', ' PRESENTS: ', ' PRES ', ' FT ', ' WITH ',
-                        ' FT. ', 'FEAT', ' AND ', ' & ', ' + ', ',', ' BAND', ' X ', ' -', ' PERFORMED BY ', ' TAKEOVER:', ' W/ '):
+                        ' FT. ', 'FEAT', ' AND ', ' & ', ' + ', ',', ' BAND', ' X ', ' -', ' PERFORMED BY ', ' TAKEOVER:', ' W/ ', ' HOSTED BY '):
 
                     if splitter in candidate:
                         performers = candidate.split(splitter)
