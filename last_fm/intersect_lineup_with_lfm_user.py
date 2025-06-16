@@ -107,7 +107,8 @@ with open('glastonbury_%s_schedule_filtered.csv' % YEAR, 'rb') as fp:
 
                     counts[resolved_artist] += amount
                     recommended[resolved_artist].append(similar_artist)
-                instances[resolved_artist].add(tuple(row))
+
+        instances[resolved_artist].add(tuple(row))
 
 print("""
 <head>
