@@ -210,7 +210,7 @@ for k, count in sorted(counts.items(), key=lambda item: item[1], reverse=True):
 
     for day in ["WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"]:
         for instance in sorted(days[day], key=lambda x: x[4]):
-            orig_name = instance[9]
+            orig_name = instance[11]
 
             website = ""
             if instance[1] and len(websites) > 1:

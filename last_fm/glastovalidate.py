@@ -12,7 +12,7 @@ import os
 API_KEY = os.environ["LASTFM_API_KEY"]
 YEAR = os.environ["YEAR"]
 
-filtered = [['title', 'url', 'stage', 'day', 'time', 'description', 'mbid', 'lfm_url', 'candidate_name', 'orig_name']]
+filtered = [['title', 'url', 'stage', 'day', 'time', 'description', 'start_time', 'end_time', 'mbid', 'lfm_url', 'candidate_name', 'orig_name']]
 
 def get_valid_filename(name):
     s = str(name).strip().replace(" ", "_")
@@ -82,7 +82,7 @@ with open('../glastonbury_%s_schedule.csv' % YEAR, 'rb') as fp:
     f = unicodecsv.reader(fp, delimiter=',', encoding='utf-8')
 
     for row in f:
-        artist, url, stage, _, _, _ = row
+        artist, url, stage, _, _, _, _, _ = row
 
         if artist == 'title':
             continue
