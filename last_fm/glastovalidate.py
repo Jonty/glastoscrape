@@ -118,8 +118,8 @@ with open('../glastonbury_%s_schedule.csv' % YEAR, 'rb') as fp:
             artist = re.sub('\[.*?\]', '', artist)
 
         # Takes care of "Session presents: "
-        artist = re.sub('^.*?: ', '', artist)
-        artist = artist.strip()
+        #artist = re.sub('^.*?: ', '', artist)
+        #artist = artist.strip()
 
         bad_artists = ["arcadia", "pixels", "love"]
         if artist.lower() in bad_artists:
