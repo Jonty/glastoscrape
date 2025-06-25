@@ -147,12 +147,80 @@ print("""
             day = "all";
         }
 
+        filters = [];
+
+        if (day.startsWith("custom")) {
+            bits = day.split("!");
+            ranges = bits[1].split("|");
+            for (range of ranges) {
+                times = range.split(",");
+                filters.push([new Date(Date.parse(times[0])), new Date(Date.parse(times[1]))]);
+            }
+        } else {
+            filter_start = null;
+            filter_end = null;
+
+            if (day == "all") {
+                filter_start_ds = "2025-06-25T00:00:00+01:00";
+                filter_end_ds = "2025-06-30T08:00:00+01:00";
+            } else if (day == "wednesday") {
+                filter_start_ds = "2025-06-25T07:00:00+01:00";
+                filter_end_ds = "2025-06-26T07:00:00+01:00";
+            } else if (day == "thursday") {
+                filter_start_ds = "2025-06-26T07:00:00+01:00";
+                filter_end_ds = "2025-06-27T07:00:00+01:00";
+            } else if (day == "friday") {
+                filter_start_ds = "2025-06-27T07:00:00+01:00";
+                filter_end_ds = "2025-06-28T07:00:00+01:00";
+            } else if (day == "saturday") {
+                filter_start_ds = "2025-06-28T07:00:00+01:00";
+                filter_end_ds = "2025-06-29T07:00:00+01:00";
+            } else if (day == "sunday") {
+                filter_start_ds = "2025-06-29T07:00:00+01:00";
+                filter_end_ds = "2025-06-30T07:00:00+01:00";
+            } else if (day == "today") {
+                filter_start = new Date(Date.now());
+                
+                filter_end = new Date(Date.now());
+                filter_end.setHours(7);
+                filter_end.setMinutes(00);
+
+                if (filter_start.getHours() >= 7) {
+                    filter_end.setDate(filter_end.getDate() + 1);
+                }
+            }
+
+            if (!filter_start && !filter_end) {
+                filter_start = new Date(Date.parse(filter_start_ds));
+                filter_end = new Date(Date.parse(filter_end_ds));
+            }
+
+            filters.push([filter_start, filter_end]);
+        }
+
         [...document.getElementsByClassName("artist")].forEach(
-            (element, index, array) => {
-                if (element.className.includes(day)) {
-                    element.style.display = "block";
+            (artist_element, index, array) => {
+                let found = false;
+                [...artist_element.getElementsByClassName("event")].forEach(
+                    (event_element, index, array) => {
+                        start = new Date(Date.parse(event_element.getAttribute('start')));
+                        end = new Date(Date.parse(event_element.getAttribute('end')));
+                        for (range of filters) {
+                            if (end > range[0] && end < range[1]) {
+                                event_element.style.display = "block";
+                                found = true;
+                                break;
+                            } else {
+                                event_element.style.display = "none";
+                            }
+                        }
+                    }
+                );
+
+                if (found == false) {
+                    artist_element.style.display = "none";
                 } else {
-                    element.style.display = "none";
+                    artist_element.style.display = "block";
                 }
             }
         );
@@ -180,7 +248,8 @@ print("""
     <a href="#thursday" class="filter thursday">Thu</a> | 
     <a href="#friday" class="filter friday">Fri</a> | 
     <a href="#saturday" class="filter saturday">Sat</a> | 
-    <a href="#sunday" class="filter sunday">Sun</a>
+    <a href="#sunday" class="filter sunday">Sun</a> | 
+    <a href="#today" class="filter today">Rest of Today</a>
 """) 
 print("<br>")
 
@@ -195,7 +264,7 @@ for k, count in sorted(counts.items(), key=lambda item: item[1], reverse=True):
         if instance[1]:
             websites.add(instance[1].strip().rstrip("/"))
 
-    print("<div class=\"artist all %s\">" % " ".join([v.lower() for v in days.keys()]))
+    print("<div class=\"artist\">")
     website = ""
     if instance[1] and len(websites) == 1:
         website = " <a href='%s' target='_blank'>🌐</a>" % instance[1]
@@ -216,12 +285,14 @@ for k, count in sorted(counts.items(), key=lambda item: item[1], reverse=True):
             if instance[1] and len(websites) > 1:
                 website = " <a href='%s' target='_blank'>🌐</a>" % instance[1]
 
-            print("<li>%s, %s from %s%s</li>" % (instance[3].capitalize(), string.capwords(instance[2]), instance[4], website))
+            print("<li style=\"margin-bottom: 5px\" class='event' start='%s' end='%s'>‣ %s, %s from %s%s" % (instance[6], instance[7], instance[3].capitalize(), string.capwords(instance[2]), instance[4], website))
 
             if orig_name.lower().strip() != name.lower().strip():
-                print("<p style=\"margin-top: 5px; margin-bottom: 5px;\"><small>%s</small></p>" % orig_name)
+                print("<p style=\"margin-top: 5px; margin-bottom: 5px; margin-left: 15px;\"><small>%s</small></p>" % orig_name)
             if instance[5]:
-                print("<p style=\"margin-top: 5px; margin-bottom: 5px;\"><i><small>\"%s\"</i></small></p>" % instance[5])
+                print("<p style=\"margin-top: 5px; margin-bottom: 5px; margin-left: 15px;\"><i><small>\"%s\"</i></small></p>" % instance[5])
+
+            print("</li>")
 
     print("</ul>")
     
